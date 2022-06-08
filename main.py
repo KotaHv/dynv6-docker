@@ -9,7 +9,7 @@ import requests
 TIMEOUT = 5
 
 logger = logging.getLogger("dynv6")
-logger.setLevel(logging.INFO)
+logger.setLevel(os.environ.get("dynv6_logger_level", "INFO").upper())
 formatter = logging.Formatter(
     fmt=r"%(asctime)s [%(name)s] [%(levelname)s]: %(message)s",
     datefmt=r"%Y/%m/%d %H:%M:%S",
