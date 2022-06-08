@@ -6,6 +6,8 @@ import logging
 import netifaces
 import requests
 
+__version__ = "0.1.0"
+
 TIMEOUT = 5
 
 logger = logging.getLogger("dynv6")
