@@ -10,10 +10,10 @@ services:
     container_name: dynv6-docker
     network_mode: host
     environment:
-      - hostname=<your domain>
+      - dynv6_hostname=<your domain>
       - dynv6_token=<your dynv6 token>
-      - interval=600
-      - no_ipv4=true
-      - interface=eth0
+      - dynv6_interval=600
+      - dynv6_no_ipv4=true
+      - dynv6_interface=eth0
     restart: unless-stopped
 ```
