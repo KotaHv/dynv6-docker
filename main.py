@@ -57,16 +57,20 @@ class Dynv6:
         return netifaces.ifaddresses(self.interface)[netifaces.AF_INET6][0]["addr"]
 
     def load_env(self):
-        self.hostname = os.environ["hostname"]
+        self.hostname = os.environ["dynv6_hostname"]
         self.token = os.environ["dynv6_token"]
-        self.interval = float(os.environ.get("interval", 600))
+        self.interval = float(os.environ.get("dynv6_interval", 600))
         self.no_ipv6 = (
-            True if os.environ.get("no_ipv6", "false").lower() == "true" else False
+            True
+            if os.environ.get("dynv6_no_ipv6", "false").lower() == "true"
+            else False
         )
         self.no_ipv4 = (
-            True if os.environ.get("no_ipv4", "false").lower() == "true" else False
+            True
+            if os.environ.get("dynv6_no_ipv4", "false").lower() == "true"
+            else False
         )
-        self.interface = os.environ.get("interface", "eth0")
+        self.interface = os.environ.get("dynv6_interface", "eth0")
 
     def load_ip(self):
         try:
