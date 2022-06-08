@@ -113,7 +113,10 @@ def main():
                     respone = dynv6.session.get(
                         dynv6.dynv6_url, params=params, timeout=TIMEOUT
                     )
-                except requests.exceptions.ConnectTimeout:
+                except (
+                    requests.exceptions.ConnectTimeout,
+                    requests.exceptions.ReadTimeout,
+                ):
                     continue
                 if respone.status_code != 200:
                     dynv6.ipv4_addr = ""
