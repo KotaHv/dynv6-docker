@@ -103,13 +103,23 @@ def main():
                 diff = True
         if diff:
             logger.info("ipv4/ipv6 address changed, start update")
-            respone = dynv6.session.get(dynv6.dynv6_url, params=params)
-            if respone.status_code != 200:
+            for _ in range(3):
+                try:
+                    respone = dynv6.session.get(dynv6.dynv6_url, params=params)
+                except requests.exceptions.ConnectTimeout:
+                    continue
+                if respone.status_code != 200:
+                    dynv6.ipv4_addr = ""
+                    dynv6.ipv6_addr = ""
+                    logger.error(
+                        "code: %s,\tmsg: %s", respone.status_code, respone.text
+                    )
+                    sys.exit(0)
+                logger.info(respone.text)
+                break
+            else:
                 dynv6.ipv4_addr = ""
                 dynv6.ipv6_addr = ""
-                logger.error("code: %s,\tmsg: %s", respone.status_code, respone.text)
-                sys.exit(0)
-            logger.info(respone.text)
         time.sleep(dynv6.interval)
 
 
