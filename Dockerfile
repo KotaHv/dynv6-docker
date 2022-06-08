@@ -1,6 +1,6 @@
 FROM alpine:3.16 AS base
 
-RUN apk add --no-cache --update python3
+RUN apk add --no-cache --update python3 tzdata
 
 FROM python:3.10 AS install
 
