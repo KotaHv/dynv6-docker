@@ -6,6 +6,7 @@ import logging
 import netifaces
 import requests
 
+TIMEOUT = 5
 
 logger = logging.getLogger("dynv6")
 logger.setLevel(logging.INFO)
@@ -50,7 +51,7 @@ class Dynv6:
             f.write(ipv6_addr)
 
     def get_ipv4(self) -> str:
-        response = self.session.get(self.ipv4_url)
+        response = self.session.get(self.ipv4_url, timeout=TIMEOUT)
         return response.text
 
     def get_ipv6(self) -> str:
@@ -109,7 +110,9 @@ def main():
             logger.info("ipv4/ipv6 address changed, start update")
             for _ in range(3):
                 try:
-                    respone = dynv6.session.get(dynv6.dynv6_url, params=params)
+                    respone = dynv6.session.get(
+                        dynv6.dynv6_url, params=params, timeout=TIMEOUT
+                    )
                 except requests.exceptions.ConnectTimeout:
                     continue
                 if respone.status_code != 200:
