@@ -7,7 +7,7 @@ from pathlib import Path
 import netifaces
 import requests
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 TIMEOUT = 5
 
