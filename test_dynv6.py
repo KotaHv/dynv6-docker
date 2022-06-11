@@ -2,7 +2,7 @@ import ipaddress
 
 import pytest
 
-from main import Dynv6
+from main import Dynv6, ipv4_file, ipv6_file
 
 
 def set_env(monkeypatch):
@@ -28,10 +28,10 @@ def test_load_ip(monkeypatch):
     set_env(monkeypatch)
     ipv4_addr = "127.0.0.1"
     ipv6_addr = "::"
-    with open(".dynv6.addr6", "w") as f:
+    with open(ipv6_file, "w") as f:
         f.write(ipv6_addr)
 
-    with open(".dynv6.addr4", "w") as f:
+    with open(ipv4_file, "w") as f:
         f.write(ipv4_addr)
 
     dynv6 = Dynv6()
@@ -47,10 +47,10 @@ def test_change_ip(monkeypatch):
     dynv6.ipv4_addr = ipv4_addr
     dynv6.ipv6_addr = ipv6_addr
 
-    with open(".dynv6.addr6", "r") as f:
+    with open(ipv6_file, "r") as f:
         assert f.read() == ipv6_addr
 
-    with open(".dynv6.addr4", "r") as f:
+    with open(ipv4_file, "r") as f:
         assert f.read() == ipv4_addr
 
 

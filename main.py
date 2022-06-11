@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import logging
+from pathlib import Path
 
 import netifaces
 import requests
@@ -21,6 +22,11 @@ stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setFormatter(formatter)
 logger.addHandler(stream_handler)
 
+base_dir = Path("data")
+base_dir.mkdir(parents=True, exist_ok=True)
+ipv4_file = base_dir / ".dynv6.addr4"
+ipv6_file = base_dir / ".dynv6.addr6"
+
 
 class Dynv6:
     def __init__(self) -> None:
@@ -39,7 +45,7 @@ class Dynv6:
     @ipv4_addr.setter
     def ipv4_addr(self, ipv4_addr: str):
         self._ipv4_addr = ipv4_addr
-        with open(".dynv6.addr4", "w") as f:
+        with open(ipv4_file, "w") as f:
             f.write(ipv4_addr)
 
     @property
@@ -49,7 +55,7 @@ class Dynv6:
     @ipv6_addr.setter
     def ipv6_addr(self, ipv6_addr: str):
         self._ipv6_addr = ipv6_addr
-        with open(".dynv6.addr6", "w") as f:
+        with open(ipv6_file, "w") as f:
             f.write(ipv6_addr)
 
     def get_ipv4(self) -> str:
@@ -77,13 +83,13 @@ class Dynv6:
 
     def load_ip(self):
         try:
-            with open(".dynv6.addr6", "r") as f:
-                self._ipv6_addr = f.read()
+            with open(ipv4_file, "r") as f:
+                self._ipv4_addr = f.read()
         except FileNotFoundError:
             pass
         try:
-            with open(".dynv6.addr4", "r") as f:
-                self._ipv4_addr = f.read()
+            with open(ipv6_file, "r") as f:
+                self._ipv6_addr = f.read()
         except FileNotFoundError:
             pass
 
