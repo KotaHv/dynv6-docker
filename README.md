@@ -16,5 +16,7 @@ services:
       - dynv6_no_ipv4=true
       - dynv6_interface=eth0
       - dynv6_log_level=INFO
+    volumes:
+      - <Your Path>:/opt/dynv6/data
     restart: unless-stopped
 ```
