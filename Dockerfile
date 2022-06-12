@@ -14,6 +14,6 @@ COPY --from=install /usr/local/lib/python3.10/site-packages /usr/lib/python3.10/
 
 WORKDIR /opt/dynv6
 
-COPY main.py .
+COPY src .
 
-ENTRYPOINT python3 main.py
+ENTRYPOINT python3 src/main.py
