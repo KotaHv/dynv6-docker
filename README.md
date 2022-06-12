@@ -15,6 +15,6 @@ services:
       - dynv6_interval=600
       - dynv6_no_ipv4=true
       - dynv6_interface=eth0
-      - dynv6_logger_level=INFO
+      - dynv6_log_level=INFO
     restart: unless-stopped
 ```
