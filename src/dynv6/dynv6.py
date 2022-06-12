@@ -7,7 +7,7 @@ import netifaces
 from .config import settings
 from .logger import logger
 
-base_dir = Path(__file__).parent.parent.parent / "data"
+base_dir = Path("data")
 base_dir.mkdir(parents=True, exist_ok=True)
 ipv4_file = base_dir / ".dynv6.addr4"
 ipv6_file = base_dir / ".dynv6.addr6"
