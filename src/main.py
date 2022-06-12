@@ -13,15 +13,19 @@ def main():
         diff = False
         if not settings.no_ipv4:
             ipv4_addr = dynv6.get_ipv4()
-            logger.info(ipv4_addr)
             if ipv4_addr != dynv6.ipv4_addr:
+                logger.info(
+                    "old ipv4: {}, current ipv4: {}", dynv6.ipv4_addr, ipv4_addr
+                )
                 params["ipv4"] = ipv4_addr
                 dynv6.ipv4_addr = ipv4_addr
                 diff = True
         if not settings.no_ipv6:
             ipv6_addr = dynv6.get_ipv6()
-            logger.info(ipv6_addr)
             if ipv6_addr != dynv6.ipv6_addr:
+                logger.info(
+                    "old ipv4: {}, current ipv6: {}", dynv6.ipv6_addr, ipv6_addr
+                )
                 params["ipv6"] = ipv6_addr
                 dynv6.ipv6_addr = ipv6_addr
                 diff = True
