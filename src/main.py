@@ -9,7 +9,7 @@ def main():
     dynv6 = Dynv6()
     params = {"hostname": settings.hostname, "token": settings.token}
     while True:
-        logger.info("checking")
+        logger.debug("checking")
         diff = False
         if not settings.no_ipv4:
             ipv4_addr = dynv6.get_ipv4()
