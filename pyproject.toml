@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dynv6-docker"
-version = "0.1.4-dev"
+version = "0.1.4"
 description = ""
 authors = ["Your Name <you@example.com>"]
 
