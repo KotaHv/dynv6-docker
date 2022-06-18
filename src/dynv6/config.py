@@ -1,4 +1,16 @@
+from enum import Enum
+
 from pydantic import BaseSettings
+
+
+class LogLevel(Enum):
+    trace = "TRACE"
+    debug = "DEBUG"
+    info = "INFO"
+    success = "SUCCESS"
+    warning = "WARNING"
+    error = "ERROR"
+    critical = "CRITICAL"
 
 
 class Settings(BaseSettings):
@@ -8,7 +20,7 @@ class Settings(BaseSettings):
     no_ipv4: bool = False
     no_ipv6: bool = False
     interface: str = "eth0"
-    log_level: str = "INFO"
+    log_level: LogLevel = LogLevel.info
 
     class Config:
         env_prefix = "dynv6_"  # defaults to no prefix
