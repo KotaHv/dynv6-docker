@@ -24,7 +24,7 @@ def main():
             ipv6_addr = dynv6.get_ipv6()
             if ipv6_addr != dynv6.ipv6_addr:
                 logger.info(
-                    "old ipv4: {}, current ipv6: {}", dynv6.ipv6_addr, ipv6_addr
+                    "old ipv6: {}, current ipv6: {}", dynv6.ipv6_addr, ipv6_addr
                 )
                 params["ipv6"] = ipv6_addr
                 dynv6.ipv6_addr = ipv6_addr
