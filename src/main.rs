@@ -10,6 +10,7 @@ mod util;
 use config::CONFIG;
 
 fn main() {
+    launch_info();
     dotenv().ok();
     if CONFIG.no_ipv4 && CONFIG.no_ipv6 {
         panic!("no_ipv4 and no_ipv6 can't both be true !")
@@ -20,4 +21,10 @@ fn main() {
         .init();
     debug!("{CONFIG:?}");
     dynv6::launch_task();
+}
+
+fn launch_info() {
+    println!();
+    println!("=================== Starting Dynv6 DDNS ===================");
+    println!();
 }
