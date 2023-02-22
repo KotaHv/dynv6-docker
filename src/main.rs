@@ -3,8 +3,8 @@ use dotenvy::dotenv;
 #[macro_use]
 extern crate log;
 
+mod api;
 mod config;
-mod dynv6;
 mod util;
 
 use config::CONFIG;
@@ -20,7 +20,7 @@ fn main() {
         .parse_write_style(&CONFIG.log_style)
         .init();
     debug!("{CONFIG:?}");
-    dynv6::launch_task();
+    api::update::launch_task();
 }
 
 fn launch_info() {
