@@ -8,6 +8,7 @@ use crate::util::{self, CLIENT};
 const DYNV6_URL: &'static str = "https://dynv6.com/api/update";
 
 pub fn launch_task() {
+    debug!("update API");
     let mut dynv6 = Dynv6::new();
     loop {
         if !CONFIG.no_ipv4 {
