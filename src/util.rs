@@ -13,8 +13,13 @@ pub static CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
 pub fn ipv6() -> Option<IpAddr> {
     let ifas = list_afinet_netifas().unwrap();
     for (name, ip) in ifas.iter() {
-        if name == &CONFIG.interface && matches!(ip, IpAddr::V6(_)) {
-            return Some(ip.clone());
+        if name == &CONFIG.interface {
+            if let IpAddr::V6(v6) = ip {
+                // ipv6 link-local // IpAddr is_unicast_link_local
+                if (v6.segments()[0] & 0xffc0) != 0xfe80 {
+                    return Some(*ip);
+                }
+            }
         }
     }
     None
