@@ -17,6 +17,12 @@ pub struct CurrentIpAddr {
 }
 
 #[derive(Deserialize, Debug)]
+pub enum API {
+    Update,
+    DynDNS,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct Config {
     pub hostname: String,
     pub token: String,
@@ -34,6 +40,8 @@ pub struct Config {
     pub current_ip: CurrentIpAddr,
     #[serde(default = "default_interval")]
     pub interval: f64,
+    #[serde(default = "default_api")]
+    pub api: API,
 }
 
 fn default_interface() -> String {
@@ -66,6 +74,10 @@ fn default_current_ip() -> CurrentIpAddr {
 
 fn default_interval() -> f64 {
     10.0
+}
+
+fn default_api() -> API {
+    API::Update
 }
 
 pub fn init_config() -> Config {

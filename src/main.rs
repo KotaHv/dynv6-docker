@@ -20,7 +20,10 @@ fn main() {
         .parse_write_style(&CONFIG.log_style)
         .init();
     debug!("{CONFIG:?}");
-    api::update::launch_task();
+    match CONFIG.api {
+        config::API::Update => api::update::launch_task(),
+        config::API::DynDNS => api::dyndns::launch_task(),
+    }
 }
 
 fn launch_info() {
