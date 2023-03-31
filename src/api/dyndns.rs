@@ -6,6 +6,7 @@ use crate::config::{CONFIG, IPV4_FILE, IPV6_FILE};
 use crate::util::{self, CLIENT};
 
 const DYNV6_URL: &'static str = "https://dynv6.com/nic/update";
+const DYNDNS_GOOD: &'static str = "good";
 
 pub fn launch_task() {
     debug!("DynDNS API");
@@ -102,8 +103,13 @@ impl Dynv6 {
             .send()
         {
             Ok(res) => {
-                if res.status().is_success() {
-                    info!("{:?}", res.text());
+                let status = res.status();
+                let text = match res.text() {
+                    Ok(text) => text.trim().to_string(),
+                    Err(err) => format!("{err:?}"),
+                };
+                if status.is_success() && text == DYNDNS_GOOD {
+                    info!("{DYNDNS_GOOD}");
                     if let Some(v4) = &self.new_v4 {
                         fs::write(IPV4_FILE, &v4).ok();
                         self.v4 = v4.to_string();
@@ -113,7 +119,7 @@ impl Dynv6 {
                         self.v6 = v6.to_string();
                     }
                 } else {
-                    error!("code: {:?}, msg: {:?}", res.status(), res.text());
+                    error!("code: {status:?}, msg: {text}");
                 }
             }
             Err(err) => error!("{err}"),
