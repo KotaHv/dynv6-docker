@@ -12,14 +12,37 @@ pub static CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
 
 pub fn ipv6() -> Option<IpAddr> {
     let ifas = list_afinet_netifas().unwrap();
-    for (name, ip) in ifas.iter() {
-        if name == &CONFIG.interface {
-            if let IpAddr::V6(v6) = ip {
-                // ipv6 link-local // IpAddr is_unicast_link_local
-                if (v6.segments()[0] & 0xffc0) != 0xfe80 {
-                    return Some(*ip);
+    #[cfg(not(target_os = "macos"))]
+    {
+        for (name, ip) in ifas.iter() {
+            if name == &CONFIG.interface {
+                if let IpAddr::V6(v6) = ip {
+                    // ipv6 link-local // IpAddr is_unicast_link_local
+                    if (v6.segments()[0] & 0xffc0) != 0xfe80 {
+                        return Some(*ip);
+                    }
                 }
             }
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let mut ipv6_list = vec![];
+        for (name, ip) in ifas.iter() {
+            if name == &CONFIG.interface {
+                if let IpAddr::V6(v6) = ip {
+                    // ipv6 link-local // IpAddr is_unicast_link_local
+                    if (v6.segments()[0] & 0xffc0) != 0xfe80 {
+                        ipv6_list.push(ip);
+                    }
+                }
+            }
+        }
+        if !ipv6_list.is_empty() {
+            if ipv6_list.len() == 1 {
+                return Some(*ipv6_list[0]);
+            }
+            return Some(*ipv6_list[ipv6_list.len() - 2]);
         }
     }
     None
