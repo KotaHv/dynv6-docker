@@ -16,11 +16,8 @@ jobs:
     strategy:
       matrix:
         target:
-          - x86_64-unknown-linux-gnu
           - x86_64-unknown-linux-musl
           - armv7-unknown-linux-musleabihf
-          - armv7-unknown-linux-gnueabihf
-          - aarch64-unknown-linux-gnu
           - aarch64-unknown-linux-musl
     steps:
       - uses: actions/checkout@v2
@@ -37,8 +34,44 @@ jobs:
       - name: Build ${{ matrix.target }}
         timeout-minutes: 120
         run: |
-          cross build --release --target ${{ matrix.target }} &&
+          cross build --release --no-default-features --features rustls --target ${{ matrix.target }} &&
           mv target/${{ matrix.target }}/release/dynv6 target/${{ matrix.target }}/release/dynv6-${{ matrix.target }}
+      - name: Upload Github Assets
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: target/${{ matrix.target }}/release/dynv6-${{ matrix.target }}
+          prerelease: ${{ contains(github.ref, '-') }}
+
+  build-cross-mips:
+    runs-on: ubuntu-latest
+    env:
+      RUST_BACKTRACE: full
+    strategy:
+      matrix:
+        target:
+          - mips-unknown-linux-musl
+          - mipsel-unknown-linux-musl
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          target: ${{ matrix.target }}
+          toolchain: nightly
+          default: true
+          override: true
+      - name: Install cross
+        run: cargo install cross
+      - name: Build ${{ matrix.target }}
+        timeout-minutes: 120
+        run: |
+          cross build --release --features vendored-openssl --target ${{ matrix.target }} &&
+          mv target/${{ matrix.target }}/release/dynv6 target/${{ matrix.target }}/release/dynv6-${{ matrix.target }}
+          sudo apt-get update -y && sudo apt-get install -y upx;
+          upx --ultra-brute target/${{ matrix.target }}/release/dynv6-${{ matrix.target }}
       - name: Upload Github Assets
         uses: softprops/action-gh-release@v1
         env:
@@ -69,7 +102,7 @@ jobs:
       - name: Build release
         shell: bash
         run: |
-          cargo build --release --target ${{ matrix.target }} &&
+          cargo build --release --no-default-features --features rustls --target ${{ matrix.target }} &&
           mv target/${{ matrix.target }}/release/dynv6 target/${{ matrix.target }}/release/dynv6-${{ matrix.target }}
       - name: Upload Github Assets
         uses: softprops/action-gh-release@v1
