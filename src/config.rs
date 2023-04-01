@@ -1,4 +1,4 @@
-use once_cell::sync::Lazy;
+use once_cell::unsync::Lazy;
 use serde::Deserialize;
 use std::fs;
 use std::net::IpAddr;
@@ -8,7 +8,7 @@ use figment::{providers::Env, Figment};
 pub const IPV4_FILE: &'static str = ".dynv6.addr4";
 pub const IPV6_FILE: &'static str = ".dynv6.addr6";
 
-pub static CONFIG: Lazy<Config> = Lazy::new(|| init_config());
+pub const CONFIG: Lazy<Config> = Lazy::new(|| init_config());
 
 #[derive(Deserialize, Debug)]
 pub struct CurrentIpAddr {
