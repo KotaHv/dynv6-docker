@@ -48,6 +48,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RUST_BACKTRACE: full
+      CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_LINKER: mips-unknown-linux-musl-gcc
+      CARGO_TARGET_MIPSEL_UNKNOWN_LINUX_MUSL_LINKER: mipsel-unknown-linux-musl-gcc
     strategy:
       matrix:
         target:
@@ -68,7 +70,7 @@ jobs:
       - name: Build ${{ matrix.target }}
         timeout-minutes: 120
         run: |
-          CARGO_TARGET_MIPSEL_UNKNOWN_LINUX_MUSL_LINKER=mipsel-unknown-linux-musl-gcc CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_LINKER=mips-unknown-linux-musl cross build --release --features vendored-openssl --target ${{ matrix.target }} &&
+          cross build --release --features vendored-openssl --target ${{ matrix.target }} &&
           mv target/${{ matrix.target }}/release/dynv6 target/${{ matrix.target }}/release/dynv6-${{ matrix.target }} && 
           sudo apt-get update -y && sudo apt-get install -y upx && 
           upx --ultra-brute target/${{ matrix.target }}/release/dynv6-${{ matrix.target }}
