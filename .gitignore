@@ -7,3 +7,4 @@
 
 .env*
 .dynv6.*
+!examples/.env
