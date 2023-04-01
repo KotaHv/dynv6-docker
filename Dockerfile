@@ -1,10 +1,10 @@
 FROM rust:1.68-alpine as builder
 WORKDIR /app
-RUN apk add --no-cache musl-dev libressl-dev
+RUN apk add --no-cache musl-dev upx
 
 COPY . .
-RUN CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse RUSTFLAGS="" cargo build --release
-
+RUN CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse cargo build --release --no-default-features --features rustls
+RUN upx --ultra-brute target/release/dynv6
 
 FROM alpine:latest
 
