@@ -67,12 +67,17 @@ jobs:
           override: true
       - name: Install cross
         run: cargo install cross
+      - name: Install upx
+        run: |
+          sudo apt-get update -y && sudo apt-get install -y curl &&
+          curl -OL https://github.com/upx/upx/releases/download/v4.0.2/upx-4.0.2-amd64_linux.tar.xz &&
+          tar -xf upx-4.0.2-amd64_linux.tar.xz -C /tmp && 
+          sudo mv /tmp/upx-4.0.2-amd64_linux/upx /usr/bin
       - name: Build ${{ matrix.target }}
         timeout-minutes: 120
         run: |
           cross build --release --features vendored-openssl --target ${{ matrix.target }} &&
           mv target/${{ matrix.target }}/release/dynv6 target/${{ matrix.target }}/release/dynv6-${{ matrix.target }} && 
-          sudo apt-get update -y && sudo apt-get install -y upx && 
           upx --ultra-brute target/${{ matrix.target }}/release/dynv6-${{ matrix.target }}
       - name: Upload Github Assets
         uses: softprops/action-gh-release@v1
