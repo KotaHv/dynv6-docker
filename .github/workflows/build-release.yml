@@ -22,10 +22,6 @@ jobs:
           - armv7-unknown-linux-gnueabihf
           - aarch64-unknown-linux-gnu
           - aarch64-unknown-linux-musl
-          - mips-unknown-linux-musl
-          - mips-unknown-linux-gnu
-          - mipsel-unknown-linux-musl
-          - mipsel-unknown-linux-gnu
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust
@@ -43,10 +39,6 @@ jobs:
         run: |
           cross build --release --target ${{ matrix.target }} &&
           mv target/${{ matrix.target }}/release/dynv6 target/${{ matrix.target }}/release/dynv6-${{ matrix.target }}
-          if [[ ${{ matrix.target }} == "mips-"* || ${{ matrix.target }} == "mipsel-"* || ${{ matrix.target }} == "mips64-"* || ${{ matrix.target }} == "mips64el-"* ]]; then
-            sudo apt-get update -y && sudo apt-get install -y upx;
-            upx -9 target/${{ matrix.target }}/release/dynv6-${{ matrix.target }}
-          fi
       - name: Upload Github Assets
         uses: softprops/action-gh-release@v1
         env:
