@@ -37,6 +37,7 @@ jobs:
       - name: Build ${{ matrix.target }}
         timeout-minutes: 120
         run: |
+          sudo apt-get update -y && sudo apt-get install -y libssl-dev;
           cross build --release --target ${{ matrix.target }} &&
           mv target/${{ matrix.target }}/release/dynv6 target/${{ matrix.target }}/release/dynv6-${{ matrix.target }}
       - name: Upload Github Assets
