@@ -8,3 +8,4 @@
 .env*
 .dynv6.*
 !examples/.env
+.DS_Store
