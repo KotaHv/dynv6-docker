@@ -1,0 +1,22 @@
+[Unit]
+After=network.target NetworkManager.service systemd-networkd.service iwd.service
+
+[Service]
+Type=simple
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_NET_BIND_SERVICE
+Restart=always
+ExecStartPre=/usr/bin/sleep 1s
+ExecStart=/opt/dynv6/dynv6
+WorkingDirectory=/opt/dynv6
+Environment="dynv6_hostname=***"
+Environment="dynv6_token=***"
+Environment="dynv6_interval=10"
+Environment="dynv6_no_ipv4=true"
+Environment="dynv6_interface=pppoe0"
+Environment="dynv6_log_level=info"
+Environment="dynv6_log_style=always"
+Environment="dynv6_api=DynDNS"
+
+[Install]
+WantedBy=multi-user.target
