@@ -1,5 +1,9 @@
 [target.mipsel-unknown-linux-musl]
 image = "messense/rust-musl-cross:mipsel-musl"
+[target.mipsel-unknown-linux-musl.env]
+passthrough = ["CARGO_TARGET_MIPSEL_UNKNOWN_LINUX_MUSL_LINKER=mipsel-unknown-linux-musl-gcc"]
 
 [target.mips-unknown-linux-musl]
 image = "messense/rust-musl-cross:mips-musl"
+[target.mips-unknown-linux-musl.env]
+passthrough = ["CARGO_TARGET_MIPS_UNKNOWN_LINUX_MUSL_LINKER=mips-unknown-linux-musl-gcc"]
