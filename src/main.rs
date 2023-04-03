@@ -5,6 +5,7 @@ extern crate log;
 
 mod api;
 mod config;
+mod logger;
 mod util;
 
 use config::CONFIG;
@@ -15,10 +16,7 @@ fn main() {
     if CONFIG.no_ipv4 && CONFIG.no_ipv6 {
         panic!("no_ipv4 and no_ipv6 can't both be true !")
     }
-    pretty_env_logger::formatted_timed_builder()
-        .parse_filters(&CONFIG.log_level)
-        .parse_write_style(&CONFIG.log_style)
-        .init();
+    logger::init_logger();
     debug!("{CONFIG:?}");
     match CONFIG.api {
         config::API::Update => api::update::launch_task(),
