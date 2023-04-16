@@ -1,4 +1,4 @@
-use once_cell::unsync::Lazy;
+use once_cell::sync::Lazy;
 use serde::Deserialize;
 use std::fs;
 use std::net::IpAddr;
@@ -8,7 +8,7 @@ use figment::{providers::Env, Figment};
 pub const IPV4_FILE: &'static str = ".dynv6.addr4";
 pub const IPV6_FILE: &'static str = ".dynv6.addr6";
 
-pub const CONFIG: Lazy<Config> = Lazy::new(|| init_config());
+pub static CONFIG: Lazy<Config> = Lazy::new(|| init_config());
 
 #[derive(Deserialize, Debug)]
 pub struct CurrentIpAddr {
@@ -77,13 +77,19 @@ fn default_interval() -> f64 {
 }
 
 fn default_api() -> API {
-    API::Update
+    API::DynDNS
 }
 
 pub fn init_config() -> Config {
-    let config = Figment::from(Env::prefixed("DYNV6_")).extract();
+    let config = Figment::from(Env::prefixed("DYNV6_")).extract::<Config>();
     match config {
-        Ok(config) => config,
+        Ok(config) => {
+            if config.no_ipv4 && config.no_ipv6 {
+                panic!("no_ipv4 and no_ipv6 can't both be true !")
+            }
+            println!("{:#?}", config);
+            config
+        }
         Err(err) => {
             panic!("{}", err);
         }
