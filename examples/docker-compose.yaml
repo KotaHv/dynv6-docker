@@ -2,7 +2,7 @@ version: "3"
 
 services:
   dynv6-docker:
-    image: kotahv/dynv6-docker:rust
+    image: ghcr.io/kotahv/dynv6-docker:latest
     container_name: dynv6-docker
     network_mode: host
     environment:
