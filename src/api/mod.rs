@@ -37,6 +37,7 @@ pub trait API {
             self.update();
             std::thread::sleep(Duration::from_secs_f64(CONFIG.interval));
         }
+        info!("gracefully shutting down");
         Ok(())
     }
 }
