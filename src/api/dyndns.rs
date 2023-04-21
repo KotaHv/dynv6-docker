@@ -1,30 +1,16 @@
-use serde::{Serialize, Serializer};
 use std::fs;
-use std::time::Duration;
 
+use serde::{Serialize, Serializer};
+
+use crate::api::API;
 use crate::config::{CONFIG, IPV4_FILE, IPV6_FILE};
 use crate::util::{self, CLIENT};
 
 const DYNV6_URL: &'static str = "https://dynv6.com/nic/update";
 const DYNDNS_GOOD: &'static str = "good";
 
-pub fn launch_task() {
-    debug!("DynDNS API");
-    let mut dynv6 = Dynv6::new();
-    loop {
-        if !CONFIG.no_ipv4 {
-            dynv6.check_v4();
-        }
-        if !CONFIG.no_ipv6 {
-            dynv6.check_v6();
-        }
-        dynv6.update();
-        std::thread::sleep(Duration::from_secs_f64(CONFIG.interval));
-    }
-}
-
 #[derive(Serialize)]
-struct Dynv6Params {
+struct Params {
     hostname: String,
     #[serde(serialize_with = "as_myip")]
     myip: Vec<String>,
@@ -38,33 +24,33 @@ where
     serializer.serialize_str(myip.as_ref().join(",").as_str())
 }
 
-impl Dynv6Params {
+impl Params {
     fn new() -> Self {
-        Dynv6Params {
+        Params {
             hostname: CONFIG.hostname.clone(),
             myip: Vec::new(),
         }
     }
 }
 
-struct Dynv6 {
+pub struct DynDNS {
     v4: String,
     v6: String,
     new_v4: Option<String>,
     new_v6: Option<String>,
-    params: Dynv6Params,
+    params: Params,
     username: String,
     password: String,
 }
 
-impl Dynv6 {
+impl API for DynDNS {
     fn new() -> Self {
-        Dynv6 {
+        DynDNS {
             v4: CONFIG.current_ip.v4.clone(),
             v6: CONFIG.current_ip.v6.clone(),
             new_v4: None,
             new_v6: None,
-            params: Dynv6Params::new(),
+            params: Params::new(),
             username: "none".to_string(),
             password: CONFIG.token.clone(),
         }

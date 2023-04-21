@@ -1,29 +1,14 @@
 use serde::Serialize;
 use std::fs;
-use std::time::Duration;
 
+use crate::api::API;
 use crate::config::{CONFIG, IPV4_FILE, IPV6_FILE};
 use crate::util::{self, CLIENT};
 
 const DYNV6_URL: &'static str = "https://dynv6.com/api/update";
 
-pub fn launch_task() {
-    debug!("update API");
-    let mut dynv6 = Dynv6::new();
-    loop {
-        if !CONFIG.no_ipv4 {
-            dynv6.check_v4();
-        }
-        if !CONFIG.no_ipv6 {
-            dynv6.check_v6();
-        }
-        dynv6.update();
-        std::thread::sleep(Duration::from_secs_f64(CONFIG.interval));
-    }
-}
-
 #[derive(Serialize)]
-pub struct Dynv6Params {
+struct Params {
     hostname: String,
     token: String,
     #[serde(rename = "ipv4")]
@@ -32,9 +17,9 @@ pub struct Dynv6Params {
     v6: Option<String>,
 }
 
-impl Dynv6Params {
+impl Params {
     fn new() -> Self {
-        Dynv6Params {
+        Params {
             hostname: CONFIG.hostname.clone(),
             token: CONFIG.token.clone(),
             v4: None,
@@ -43,18 +28,18 @@ impl Dynv6Params {
     }
 }
 
-pub struct Dynv6 {
+pub struct Update {
     v4: String,
     v6: String,
-    params: Dynv6Params,
+    params: Params,
 }
 
-impl Dynv6 {
+impl API for Update {
     fn new() -> Self {
-        Dynv6 {
+        Update {
             v4: CONFIG.current_ip.v4.clone(),
             v6: CONFIG.current_ip.v6.clone(),
-            params: Dynv6Params::new(),
+            params: Params::new(),
         }
     }
     fn check_v4(&mut self) {
