@@ -6,13 +6,23 @@ use serde::Serialize;
 pub static CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
 
 pub struct Client {
-    client: reqwest::blocking::Client,
+    client: ureq::Agent,
 }
 
 impl Client {
+    #[cfg(not(feature = "native"))]
     pub fn new() -> Self {
         Self {
-            client: reqwest::blocking::Client::new(),
+            client: ureq::Agent::new(),
+        }
+    }
+    #[cfg(feature = "native")]
+    pub fn new() -> Self {
+        use std::sync::Arc;
+        Self {
+            client: ureq::AgentBuilder::new()
+                .tls_connector(Arc::new(native_tls::TlsConnector::new().unwrap()))
+                .build(),
         }
     }
 
@@ -21,32 +31,42 @@ impl Client {
     }
 }
 
-pub struct RequestBuilder(reqwest::blocking::RequestBuilder);
+pub struct RequestBuilder(ureq::Request);
 
 impl RequestBuilder {
     pub fn basic_auth(self, username: &str, password: &str) -> RequestBuilder {
-        RequestBuilder(self.0.basic_auth(username, Some(password)))
+        use base64::{engine::general_purpose, Engine as _};
+        let basic_auth = String::from(username) + ":" + password;
+        let basic_auth =
+            String::from("Basic ") + &general_purpose::STANDARD.encode(basic_auth.as_bytes());
+        RequestBuilder(self.0.set("Authorization", &basic_auth))
     }
     pub fn query<T: Serialize + ?Sized>(self, query: &T) -> Self {
-        RequestBuilder(self.0.query(query))
+        use std::collections::BTreeMap;
+        let pairs = serde_json::to_value(query).unwrap();
+        let pairs: BTreeMap<String, String> = serde_json::from_value(pairs).unwrap();
+        let pairs = pairs
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_str()))
+            .collect::<Vec<(&str, &str)>>();
+        RequestBuilder(self.0.query_pairs(pairs))
     }
     pub fn send(self) -> Result<Response, Error> {
-        match self.0.send() {
+        match self.0.call() {
             Ok(res) => Ok(Response(res)),
             Err(e) => Err(Error(e.to_string())),
         }
     }
 }
 
-pub struct Response(reqwest::blocking::Response);
+pub struct Response(ureq::Response);
 
 impl Response {
     pub fn status(&self) -> StatusCode {
-        let status = self.0.status();
-        StatusCode(status.as_u16(), status.to_string())
+        StatusCode(self.0.status(), self.0.status_text().to_string())
     }
     pub fn text(self) -> Result<String, Error> {
-        match self.0.text() {
+        match self.0.into_string() {
             Ok(text) => Ok(text),
             Err(e) => Err(Error(e.to_string())),
         }
