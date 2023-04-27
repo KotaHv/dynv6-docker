@@ -34,7 +34,7 @@ jobs:
       - name: Build ${{ matrix.target }}
         timeout-minutes: 120
         run: |
-          cross build --release --no-default-features --features rustls --target ${{ matrix.target }} &&
+          cross build --release --target ${{ matrix.target }} &&
           mv target/${{ matrix.target }}/release/dynv6 target/${{ matrix.target }}/release/dynv6-${{ matrix.target }}
       - name: Upload Github Assets
         uses: softprops/action-gh-release@v1
@@ -74,7 +74,7 @@ jobs:
       - name: Build ${{ matrix.target }}
         timeout-minutes: 120
         run: |
-          cross build --release --features vendored-openssl --target ${{ matrix.target }} &&
+          cross build --release --no-default-features --features vendored-openssl --target ${{ matrix.target }} &&
           mv target/${{ matrix.target }}/release/dynv6 target/${{ matrix.target }}/release/dynv6-${{ matrix.target }} && 
           upx --ultra-brute target/${{ matrix.target }}/release/dynv6-${{ matrix.target }}
       - name: Upload Github Assets
@@ -108,7 +108,7 @@ jobs:
       - name: Build release
         shell: bash
         run: |
-          cargo build --release --no-default-features --features rustls --target ${{ matrix.target }} &&
+          cargo build --release --target ${{ matrix.target }} &&
           mv target/${{ matrix.target }}/release/dynv6 target/${{ matrix.target }}/release/dynv6-${{ matrix.target }}
       - name: Upload Github Assets
         uses: softprops/action-gh-release@v1

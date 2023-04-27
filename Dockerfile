@@ -3,7 +3,7 @@ WORKDIR /app
 RUN apk add --no-cache musl-dev upx
 
 COPY . .
-RUN CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse cargo build --release --no-default-features --features rustls
+RUN CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse cargo build --release
 RUN upx --ultra-brute target/release/dynv6
 
 FROM alpine:latest
