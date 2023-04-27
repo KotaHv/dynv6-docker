@@ -12,9 +12,9 @@ const DYNV6_URL: &'static str = "https://dynv6.com/api/update";
 struct Params {
     hostname: &'static str,
     token: &'static str,
-    #[serde(rename = "ipv4")]
+    #[serde(rename = "ipv4", skip_serializing_if = "Option::is_none")]
     v4: Option<String>,
-    #[serde(rename = "ipv6")]
+    #[serde(rename = "ipv6", skip_serializing_if = "Option::is_none")]
     v6: Option<String>,
 }
 
