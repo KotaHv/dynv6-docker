@@ -45,10 +45,7 @@ impl RequestBuilder {
         use std::collections::BTreeMap;
         let pairs = serde_json::to_value(query).unwrap();
         let pairs: BTreeMap<String, String> = serde_json::from_value(pairs).unwrap();
-        let pairs = pairs
-            .iter()
-            .map(|(k, v)| (k.as_str(), v.as_str()))
-            .collect::<Vec<(&str, &str)>>();
+        let pairs = pairs.iter().map(|(k, v)| (k.as_str(), v.as_str()));
         RequestBuilder(self.0.query_pairs(pairs))
     }
     pub fn send(self) -> Result<Response, Error> {
