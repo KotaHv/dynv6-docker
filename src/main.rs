@@ -17,6 +17,9 @@ fn main() -> std::io::Result<()> {
 
 fn launch_info() {
     println!();
-    println!("=================== Starting Dynv6 DDNS ===================");
+    println!(
+        "=================== Starting Dynv6 DDNS {} ===================",
+        env!("CARGO_PKG_VERSION")
+    );
     println!();
 }
