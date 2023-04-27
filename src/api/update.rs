@@ -9,8 +9,8 @@ const DYNV6_URL: &'static str = "https://dynv6.com/api/update";
 
 #[derive(Serialize)]
 struct Params {
-    hostname: String,
-    token: String,
+    hostname: &'static str,
+    token: &'static str,
     #[serde(rename = "ipv4")]
     v4: Option<String>,
     #[serde(rename = "ipv6")]
@@ -20,8 +20,8 @@ struct Params {
 impl Params {
     fn new() -> Self {
         Params {
-            hostname: CONFIG.hostname.clone(),
-            token: CONFIG.token.clone(),
+            hostname: &CONFIG.hostname,
+            token: &CONFIG.token,
             v4: None,
             v6: None,
         }

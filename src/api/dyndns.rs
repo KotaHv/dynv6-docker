@@ -11,7 +11,7 @@ const DYNDNS_GOOD: &'static str = "good";
 
 #[derive(Serialize)]
 struct Params {
-    hostname: String,
+    hostname: &'static str,
     #[serde(serialize_with = "as_myip")]
     myip: Vec<String>,
 }
@@ -27,7 +27,7 @@ where
 impl Params {
     fn new() -> Self {
         Params {
-            hostname: CONFIG.hostname.clone(),
+            hostname: &CONFIG.hostname,
             myip: Vec::new(),
         }
     }
@@ -39,8 +39,8 @@ pub struct DynDNS {
     new_v4: Option<String>,
     new_v6: Option<String>,
     params: Params,
-    username: String,
-    password: String,
+    username: &'static str,
+    password: &'static str,
 }
 
 impl API for DynDNS {
@@ -51,8 +51,8 @@ impl API for DynDNS {
             new_v4: None,
             new_v6: None,
             params: Params::new(),
-            username: "none".to_string(),
-            password: CONFIG.token.clone(),
+            username: "none",
+            password: &CONFIG.token,
         }
     }
     fn check_v4(&mut self) {
