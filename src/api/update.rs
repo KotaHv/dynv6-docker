@@ -3,7 +3,8 @@ use std::fs;
 
 use crate::api::API;
 use crate::config::{CONFIG, IPV4_FILE, IPV6_FILE};
-use crate::util::{self, CLIENT};
+use crate::util;
+use crate::CLIENT;
 
 const DYNV6_URL: &'static str = "https://dynv6.com/api/update";
 
@@ -80,7 +81,7 @@ impl API for Update {
                         self.v6 = v6.to_owned();
                     }
                 } else {
-                    error!("code: {:?}, msg: {:?}", res.status(), res.text());
+                    error!("code: {}, msg: {:?}", res.status(), res.text());
                 }
             }
             Err(err) => error!("{err}"),

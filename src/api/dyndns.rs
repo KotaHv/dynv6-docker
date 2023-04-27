@@ -4,7 +4,8 @@ use serde::{Serialize, Serializer};
 
 use crate::api::API;
 use crate::config::{CONFIG, IPV4_FILE, IPV6_FILE};
-use crate::util::{self, CLIENT};
+use crate::util;
+use crate::CLIENT;
 
 const DYNV6_URL: &'static str = "https://dynv6.com/nic/update";
 const DYNDNS_GOOD: &'static str = "good";
@@ -84,7 +85,7 @@ impl API for DynDNS {
         info!("ipv4/ipv6 address changed, start update");
         match CLIENT
             .get(DYNV6_URL)
-            .basic_auth(&self.username, Some(&self.password))
+            .basic_auth(&self.username, &self.password)
             .query(&self.params)
             .send()
         {
@@ -105,7 +106,7 @@ impl API for DynDNS {
                         self.v6 = v6.to_string();
                     }
                 } else {
-                    error!("code: {status:?}, msg: {text}");
+                    error!("code: {status}, msg: {text}");
                 }
             }
             Err(err) => error!("{err}"),

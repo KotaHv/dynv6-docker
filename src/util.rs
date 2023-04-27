@@ -1,14 +1,11 @@
-use once_cell::sync::Lazy;
-use reqwest::blocking::Client;
 use std::net::IpAddr;
 
 use local_ip_address::list_afinet_netifas;
 
 use crate::config::CONFIG;
+use crate::{Error, CLIENT};
 
 const IPV4_URL: &'static str = "https://api4.my-ip.io/ip";
-
-pub static CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
 
 pub fn ipv6() -> Option<IpAddr> {
     let ifas = list_afinet_netifas().unwrap();
@@ -48,7 +45,7 @@ pub fn ipv6() -> Option<IpAddr> {
     None
 }
 
-fn fetch_ipv4() -> reqwest::Result<String> {
+fn fetch_ipv4() -> Result<String, Error> {
     let res = CLIENT.get(IPV4_URL).send()?;
     res.text()
 }
