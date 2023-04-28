@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-openssl = { version = '0.10', optional = true }
 local-ip-address = "0.5"
 ureq = { version = "2.0", default-features = false }
 log = "0.4"
@@ -32,4 +31,4 @@ panic = "abort"
 [features]
 default = ["ureq/tls"]
 native = ["native-tls", "ureq/native-tls"]
-vendored-openssl = ["openssl/vendored", "native"]
+vendored-openssl = ["native-tls/vendored", "native"]
