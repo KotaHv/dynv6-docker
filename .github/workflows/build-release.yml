@@ -20,7 +20,7 @@ jobs:
           - armv7-unknown-linux-musleabihf
           - aarch64-unknown-linux-musl
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -54,7 +54,7 @@ jobs:
           - mips-unknown-linux-musl
           - mipsel-unknown-linux-musl
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -96,7 +96,7 @@ jobs:
           - x86_64-apple-darwin
           - aarch64-apple-darwin
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
