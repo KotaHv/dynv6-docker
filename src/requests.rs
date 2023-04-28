@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use attohttpc::Session;
 use once_cell::sync::Lazy;
 use serde::Serialize;
 
@@ -8,23 +9,13 @@ use crate::Error;
 pub static CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
 
 pub struct Client {
-    client: ureq::Agent,
+    client: Session,
 }
 
 impl Client {
-    #[cfg(not(feature = "native"))]
     pub fn new() -> Self {
         Self {
-            client: ureq::Agent::new(),
-        }
-    }
-    #[cfg(feature = "native")]
-    pub fn new() -> Self {
-        use std::sync::Arc;
-        Self {
-            client: ureq::AgentBuilder::new()
-                .tls_connector(Arc::new(native_tls::TlsConnector::new().unwrap()))
-                .build(),
+            client: Session::new(),
         }
     }
 
@@ -33,39 +24,36 @@ impl Client {
     }
 }
 
-pub struct RequestBuilder(ureq::Request);
+pub struct RequestBuilder(attohttpc::RequestBuilder);
 
 impl RequestBuilder {
     pub fn basic_auth(self, username: &str, password: &str) -> RequestBuilder {
-        use base64::{engine::general_purpose, Engine as _};
-        let basic_auth = String::from(username) + ":" + password;
-        let basic_auth =
-            String::from("Basic ") + &general_purpose::STANDARD.encode(basic_auth.as_bytes());
-        RequestBuilder(self.0.set("Authorization", &basic_auth))
+        RequestBuilder(self.0.basic_auth(username, Some(password)))
     }
     pub fn query<T: Serialize + ?Sized>(self, query: &T) -> Self {
         use crate::ser::to_vec;
         let pairs = to_vec(query).unwrap();
         debug!("query: {:#?}", &pairs);
         let pairs = pairs.iter().map(|[k, v]| (k.as_str(), v.as_str()));
-        RequestBuilder(self.0.query_pairs(pairs))
+        RequestBuilder(self.0.params(pairs))
     }
     pub fn send(self) -> Result<Response, Error> {
-        match self.0.call() {
+        match self.0.send() {
             Ok(res) => Ok(Response(res)),
             Err(e) => Err(Error(e.to_string())),
         }
     }
 }
 
-pub struct Response(ureq::Response);
+pub struct Response(attohttpc::Response);
 
 impl Response {
     pub fn status(&self) -> StatusCode {
-        StatusCode(self.0.status(), self.0.status_text().to_string())
+        let status = self.0.status();
+        StatusCode(status.as_u16(), status.to_string())
     }
     pub fn text(self) -> Result<String, Error> {
-        match self.0.into_string() {
+        match self.0.text() {
             Ok(text) => Ok(text),
             Err(e) => Err(Error(e.to_string())),
         }
