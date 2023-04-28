@@ -9,7 +9,7 @@ mod logger;
 mod requests;
 mod util;
 
-pub use requests::{Error, CLIENT};
+pub use requests::Error;
 
 fn main() -> std::io::Result<()> {
     launch_info();

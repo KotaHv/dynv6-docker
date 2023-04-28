@@ -4,8 +4,8 @@ use serde::{Serialize, Serializer};
 
 use crate::api::API;
 use crate::config::{CONFIG, IPV4_FILE, IPV6_FILE};
+use crate::requests::Client;
 use crate::util;
-use crate::CLIENT;
 
 const DYNV6_URL: &'static str = "https://dynv6.com/nic/update";
 const DYNDNS_GOOD: &'static str = "good";
@@ -42,6 +42,7 @@ pub struct DynDNS {
     params: Params,
     username: &'static str,
     password: &'static str,
+    client: Client,
 }
 
 impl API for DynDNS {
@@ -54,11 +55,12 @@ impl API for DynDNS {
             params: Params::new(),
             username: "none",
             password: &CONFIG.token,
+            client: Client::new(),
         }
     }
     fn check_v4(&mut self) {
         debug!("check v4");
-        if let Some(new_v4) = util::ipv4() {
+        if let Some(new_v4) = util::ipv4(&mut self.client) {
             let new_v4 = new_v4.to_string();
             if new_v4 != self.v4 {
                 info!("old ipv4: {}, current ipv4: {}", self.v4, new_v4);
@@ -83,15 +85,13 @@ impl API for DynDNS {
             return;
         }
         info!("ipv4/ipv6 address changed, start update");
-        match CLIENT
-            .get(DYNV6_URL)
-            .basic_auth(&self.username, &self.password)
-            .query(&self.params)
-            .send()
-        {
-            Ok(res) => {
-                let status = res.status();
-                let text = match res.text() {
+        self.client.get(DYNV6_URL);
+        self.client.basic_auth(&self.username, &self.password);
+        self.client.query(&self.params);
+        match self.client.send() {
+            Ok(_) => {
+                let status = self.client.status();
+                let text = match self.client.text() {
                     Ok(text) => text.trim().to_string(),
                     Err(err) => format!("{err:?}"),
                 };

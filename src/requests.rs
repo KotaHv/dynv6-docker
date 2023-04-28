@@ -1,69 +1,60 @@
 use std::fmt::Display;
 
-use once_cell::sync::Lazy;
+use curl::easy::Easy;
 use serde::Serialize;
 
-pub static CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
-
 pub struct Client {
-    client: ureq::Agent,
+    client: Easy,
+    url: String,
+    buf: Vec<u8>,
 }
 
 impl Client {
-    #[cfg(not(feature = "native"))]
     pub fn new() -> Self {
         Self {
-            client: ureq::Agent::new(),
-        }
-    }
-    #[cfg(feature = "native")]
-    pub fn new() -> Self {
-        use std::sync::Arc;
-        Self {
-            client: ureq::AgentBuilder::new()
-                .tls_connector(Arc::new(native_tls::TlsConnector::new().unwrap()))
-                .build(),
+            client: Easy::new(),
+            url: String::new(),
+            buf: vec![],
         }
     }
 
-    pub fn get(&self, url: &str) -> RequestBuilder {
-        RequestBuilder(self.client.get(url))
+    pub fn get(&mut self, url: &str) {
+        self.client.get(true).unwrap();
+        self.url = self.url.to_string() + url;
     }
-}
 
-pub struct RequestBuilder(ureq::Request);
-
-impl RequestBuilder {
-    pub fn basic_auth(self, username: &str, password: &str) -> RequestBuilder {
-        use base64::{engine::general_purpose, Engine as _};
-        let basic_auth = String::from(username) + ":" + password;
-        let basic_auth =
-            String::from("Basic ") + &general_purpose::STANDARD.encode(basic_auth.as_bytes());
-        RequestBuilder(self.0.set("Authorization", &basic_auth))
+    pub fn basic_auth(&mut self, username: &str, password: &str) {
+        use curl::easy::Auth;
+        self.client.username(username).unwrap();
+        self.client.password(password).unwrap();
+        self.client.http_auth(Auth::new().basic(true)).unwrap();
     }
-    pub fn query<T: Serialize + ?Sized>(self, query: &T) -> Self {
-        use std::collections::BTreeMap;
-        let pairs = serde_json::to_value(query).unwrap();
-        let pairs: BTreeMap<String, String> = serde_json::from_value(pairs).unwrap();
-        let pairs = pairs.iter().map(|(k, v)| (k.as_str(), v.as_str()));
-        RequestBuilder(self.0.query_pairs(pairs))
+    pub fn query<T: Serialize + ?Sized>(&mut self, query: &T) {
+        let pairs = serde_urlencoded::to_string(query).unwrap();
+        self.url = self.url.to_string() + "?" + &pairs;
     }
-    pub fn send(self) -> Result<Response, Error> {
-        match self.0.call() {
-            Ok(res) => Ok(Response(res)),
-            Err(e) => Err(Error(e.to_string())),
+    pub fn send(&mut self) -> Result<(), Error> {
+        self.client.url(&self.url).unwrap();
+        {
+            let mut transfer = self.client.transfer();
+            transfer
+                .write_function(|data| {
+                    self.buf.extend_from_slice(data);
+                    Ok(data.len())
+                })
+                .unwrap();
+            transfer.perform().unwrap();
         }
+        Ok(())
     }
-}
 
-pub struct Response(ureq::Response);
-
-impl Response {
-    pub fn status(&self) -> StatusCode {
-        StatusCode(self.0.status(), self.0.status_text().to_string())
+    pub fn status(&mut self) -> StatusCode {
+        StatusCode(self.client.response_code().unwrap())
     }
-    pub fn text(self) -> Result<String, Error> {
-        match self.0.into_string() {
+    pub fn text(&mut self) -> Result<String, Error> {
+        let buf = self.buf.to_owned();
+        self.buf = vec![];
+        match String::from_utf8(buf) {
             Ok(text) => Ok(text),
             Err(e) => Err(Error(e.to_string())),
         }
@@ -71,7 +62,7 @@ impl Response {
 }
 
 #[derive(Debug)]
-pub struct StatusCode(u16, String);
+pub struct StatusCode(u32);
 
 impl StatusCode {
     pub fn is_success(&self) -> bool {
@@ -81,7 +72,7 @@ impl StatusCode {
 
 impl Display for StatusCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.1)
+        write!(f, "{}", self.0)
     }
 }
 
