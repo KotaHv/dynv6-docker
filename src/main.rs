@@ -5,11 +5,14 @@ extern crate log;
 
 mod api;
 mod config;
+mod error;
 mod logger;
 mod requests;
+mod ser;
 mod util;
 
-pub use requests::{Error, CLIENT};
+pub use error::Error;
+pub use requests::CLIENT;
 
 fn main() -> std::io::Result<()> {
     launch_info();

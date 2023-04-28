@@ -3,6 +3,8 @@ use std::fmt::Display;
 use once_cell::sync::Lazy;
 use serde::Serialize;
 
+use crate::Error;
+
 pub static CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
 
 pub struct Client {
@@ -42,10 +44,10 @@ impl RequestBuilder {
         RequestBuilder(self.0.set("Authorization", &basic_auth))
     }
     pub fn query<T: Serialize + ?Sized>(self, query: &T) -> Self {
-        use std::collections::BTreeMap;
-        let pairs = serde_json::to_value(query).unwrap();
-        let pairs: BTreeMap<String, String> = serde_json::from_value(pairs).unwrap();
-        let pairs = pairs.iter().map(|(k, v)| (k.as_str(), v.as_str()));
+        use crate::ser::to_vec;
+        let pairs = to_vec(query).unwrap();
+        warn!("{:#?}", &pairs);
+        let pairs = pairs.iter().map(|[k, v]| (k.as_str(), v.as_str()));
         RequestBuilder(self.0.query_pairs(pairs))
     }
     pub fn send(self) -> Result<Response, Error> {
@@ -82,14 +84,5 @@ impl StatusCode {
 impl Display for StatusCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.1)
-    }
-}
-
-#[derive(Debug)]
-pub struct Error(String);
-
-impl Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
     }
 }
