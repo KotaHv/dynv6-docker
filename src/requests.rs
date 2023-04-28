@@ -46,7 +46,7 @@ impl RequestBuilder {
     pub fn query<T: Serialize + ?Sized>(self, query: &T) -> Self {
         use crate::ser::to_vec;
         let pairs = to_vec(query).unwrap();
-        warn!("{:#?}", &pairs);
+        debug!("query: {:#?}", &pairs);
         let pairs = pairs.iter().map(|[k, v]| (k.as_str(), v.as_str()));
         RequestBuilder(self.0.query_pairs(pairs))
     }
