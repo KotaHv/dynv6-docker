@@ -19,7 +19,6 @@ chrono = "0.4"
 signal-hook = "0.3"
 native-tls = { version = "0.2", optional = true }
 serde_urlencoded = "0.7"
-regex = { version = "1", default-features = false, features = ["std"] }
 
 [profile.release]
 lto = true

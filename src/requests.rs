@@ -2,15 +2,11 @@ use std::fmt::Display;
 use std::process::Command;
 
 use once_cell::sync::Lazy;
-use regex::Regex;
 use serde::Serialize;
 
 use crate::Error;
 
 pub static CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
-pub static RE_RESPONSE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?P<text>[\s\S]+?)\nstatus: (?P<status>\d+?)\nerr: (?P<err>[\s\S]*)").unwrap()
-});
 
 pub struct Client;
 
@@ -77,11 +73,12 @@ pub struct Response {
 
 impl Response {
     fn new(dst: &str) -> Self {
-        let caps = RE_RESPONSE.captures(dst).unwrap();
+        let (text, dst) = dst.split_once("\nstatus: ").unwrap();
+        let (status, err) = dst.split_once("\nerr: ").unwrap();
         Self {
-            status: caps.name("status").unwrap().as_str().parse().unwrap(),
-            err: caps.name("err").unwrap().as_str().to_string(),
-            text: caps.name("text").unwrap().as_str().to_string(),
+            status: status.parse().unwrap(),
+            err: err.to_string(),
+            text: text.to_string(),
         }
     }
     pub fn status(&self) -> StatusCode {
