@@ -8,7 +8,6 @@ mod config;
 mod error;
 mod logger;
 mod requests;
-mod ser;
 mod util;
 
 pub use error::Error;

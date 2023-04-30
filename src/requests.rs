@@ -1,73 +1,97 @@
 use std::fmt::Display;
+use std::process::Command;
 
 use once_cell::sync::Lazy;
+use regex::Regex;
 use serde::Serialize;
 
 use crate::Error;
 
 pub static CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
+pub static RE_RESPONSE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?P<text>[\s\S]+?)\nstatus: (?P<status>\d+?)\nerr: (?P<err>[\s\S]*)").unwrap()
+});
 
-pub struct Client {
-    client: ureq::Agent,
-}
+pub struct Client;
 
 impl Client {
-    #[cfg(not(feature = "native"))]
     pub fn new() -> Self {
-        Self {
-            client: ureq::Agent::new(),
-        }
-    }
-    #[cfg(feature = "native")]
-    pub fn new() -> Self {
-        use std::sync::Arc;
-        Self {
-            client: ureq::AgentBuilder::new()
-                .tls_connector(Arc::new(native_tls::TlsConnector::new().unwrap()))
-                .build(),
-        }
+        Self
     }
 
     pub fn get(&self, url: &str) -> RequestBuilder {
-        RequestBuilder(self.client.get(url))
+        RequestBuilder::new(url)
     }
 }
 
-pub struct RequestBuilder(ureq::Request);
+pub struct RequestBuilder {
+    url: String,
+    basic_auth: Option<String>,
+}
 
 impl RequestBuilder {
-    pub fn basic_auth(self, username: &str, password: &str) -> RequestBuilder {
-        use base64::{engine::general_purpose, Engine as _};
+    fn new(url: &str) -> Self {
+        Self {
+            url: url.to_string(),
+            basic_auth: None,
+        }
+    }
+    pub fn basic_auth(mut self, username: &str, password: &str) -> Self {
         let basic_auth = String::from(username) + ":" + password;
-        let basic_auth =
-            String::from("Basic ") + &general_purpose::STANDARD.encode(basic_auth.as_bytes());
-        RequestBuilder(self.0.set("Authorization", &basic_auth))
+        self.basic_auth = Some(basic_auth);
+        self
     }
-    pub fn query<T: Serialize + ?Sized>(self, query: &T) -> Self {
-        use crate::ser::to_vec;
-        let pairs = to_vec(query).unwrap();
-        debug!("query: {:#?}", &pairs);
-        let pairs = pairs.iter().map(|[k, v]| (k.as_str(), v.as_str()));
-        RequestBuilder(self.0.query_pairs(pairs))
+    pub fn query<T: Serialize + ?Sized>(mut self, query: &T) -> Self {
+        self.url += "?";
+        self.url += &serde_urlencoded::to_string(query).unwrap();
+        self
     }
-    pub fn send(self) -> Result<Response, Error> {
-        match self.0.call() {
-            Ok(res) => Ok(Response(res)),
+    pub fn send(&self) -> Result<Response, Error> {
+        let mut args = vec!["-w", "status: %{http_code}\nerr: %{errormsg}"];
+        if let Some(basic_auth) = &self.basic_auth {
+            args.push("-u");
+            args.push(basic_auth)
+        }
+        args.push(&self.url);
+        let mut curl = Command::new("/usr/bin/curl");
+        let output = curl.args(args).output();
+        match output {
+            Ok(output) => {
+                let stdout = String::from_utf8(output.stdout).unwrap();
+                let stderr = String::from_utf8(output.stderr).unwrap();
+                match output.status.success() {
+                    true => Ok(Response::new(&stdout)),
+                    false => Err(Error(stderr)),
+                }
+            }
             Err(e) => Err(Error(e.to_string())),
         }
     }
 }
 
-pub struct Response(ureq::Response);
+pub struct Response {
+    status: u16,
+    err: String,
+    text: String,
+}
 
 impl Response {
+    fn new(dst: &str) -> Self {
+        let caps = RE_RESPONSE.captures(dst).unwrap();
+        Self {
+            status: caps.name("status").unwrap().as_str().parse().unwrap(),
+            err: caps.name("err").unwrap().as_str().to_string(),
+            text: caps.name("text").unwrap().as_str().to_string(),
+        }
+    }
     pub fn status(&self) -> StatusCode {
-        StatusCode(self.0.status(), self.0.status_text().to_string())
+        StatusCode(self.status, self.status.to_string())
     }
     pub fn text(self) -> Result<String, Error> {
-        match self.0.into_string() {
-            Ok(text) => Ok(text),
-            Err(e) => Err(Error(e.to_string())),
+        if self.err.is_empty() {
+            Ok(self.text)
+        } else {
+            Err(Error(self.err))
         }
     }
 }
