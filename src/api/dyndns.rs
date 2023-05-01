@@ -83,36 +83,36 @@ impl API for DynDNS {
             return;
         }
         info!("ipv4/ipv6 address changed, start update");
-        unsafe {
-            match CLIENT
-                .get(DYNV6_URL)
-                .basic_auth(&self.username, &self.password)
-                .query(&self.params)
-                .send()
-            {
-                Ok(res) => {
-                    let status = res.status();
-                    let text = match res.text() {
-                        Ok(text) => text.trim().to_string(),
-                        Err(err) => format!("{err:?}"),
-                    };
-                    if status.is_success() && text == DYNDNS_GOOD {
-                        info!("{DYNDNS_GOOD}");
-                        if let Some(v4) = &self.new_v4 {
-                            fs::write(IPV4_FILE, &v4).ok();
-                            self.v4 = v4.to_string();
-                        }
-                        if let Some(v6) = &self.new_v6 {
-                            fs::write(IPV6_FILE, &v6).ok();
-                            self.v6 = v6.to_string();
-                        }
-                    } else {
-                        error!("code: {status}, msg: {text}");
+
+        match CLIENT
+            .get(DYNV6_URL)
+            .basic_auth(&self.username, &self.password)
+            .query(&self.params)
+            .send()
+        {
+            Ok(res) => {
+                let status = res.status();
+                let text = match res.text() {
+                    Ok(text) => text.trim().to_string(),
+                    Err(err) => format!("{err:?}"),
+                };
+                if status.is_success() && text == DYNDNS_GOOD {
+                    info!("{DYNDNS_GOOD}");
+                    if let Some(v4) = &self.new_v4 {
+                        fs::write(IPV4_FILE, &v4).ok();
+                        self.v4 = v4.to_string();
                     }
+                    if let Some(v6) = &self.new_v6 {
+                        fs::write(IPV6_FILE, &v6).ok();
+                        self.v6 = v6.to_string();
+                    }
+                } else {
+                    error!("code: {status}, msg: {text}");
                 }
-                Err(err) => error!("{err}"),
             }
+            Err(err) => error!("{err}"),
         }
+
         self.params.myip = Vec::new();
         self.new_v4 = None;
         self.new_v6 = None;

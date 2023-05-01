@@ -1,67 +1,92 @@
-use std::fmt::Display;
+use std::{
+    fmt::Display,
+    sync::{Arc, Mutex},
+};
 
 use curl::easy::Easy;
-use once_cell::unsync::Lazy;
+use once_cell::sync::Lazy;
 use serde::Serialize;
 
-pub static mut CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
+pub static CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
 
 pub struct Client {
-    client: Easy,
-    url: String,
-    buf: Vec<u8>,
+    client: Arc<Mutex<Easy>>,
 }
 
 impl Client {
     pub fn new() -> Self {
         Self {
-            client: Easy::new(),
-            url: String::new(),
-            buf: vec![],
+            client: Arc::new(Mutex::new(Easy::new())),
         }
     }
 
-    pub fn get(&mut self, url: &str) -> &mut Self {
-        self.client.get(true).unwrap();
-        self.url = self.url.to_string() + url;
-        self
+    pub fn get(&self, url: &str) -> Request {
+        let mut client = self.client.lock().unwrap();
+        client.get(true).unwrap();
+        Request::new(self.client.clone(), url.into())
     }
+}
 
-    pub fn basic_auth(&mut self, username: &str, password: &str) -> &mut Self {
+pub struct Request {
+    client: Arc<Mutex<Easy>>,
+    url: String,
+}
+
+impl Request {
+    fn new(client: Arc<Mutex<Easy>>, url: String) -> Self {
+        Self { client, url }
+    }
+    pub fn basic_auth(self, username: &str, password: &str) -> Self {
         use curl::easy::Auth;
-        self.client.username(username).unwrap();
-        self.client.password(password).unwrap();
-        self.client.http_auth(Auth::new().basic(true)).unwrap();
+        {
+            let mut client = self.client.lock().unwrap();
+            client.username(username).unwrap();
+            client.password(password).unwrap();
+            client.http_auth(Auth::new().basic(true)).unwrap();
+        }
         self
     }
-    pub fn query<T: Serialize + ?Sized>(&mut self, query: &T) -> &mut Self {
+    pub fn query<T: Serialize + ?Sized>(mut self, query: &T) -> Self {
         let pairs = serde_urlencoded::to_string(query).unwrap();
         self.url = self.url.to_string() + "?" + &pairs;
         self
     }
-    pub fn send(&mut self) -> Result<&mut Self, Error> {
-        self.client.url(&self.url).unwrap();
+    pub fn send(&mut self) -> Result<Response, Error> {
+        let mut client = self.client.lock().unwrap();
+        client.url(&self.url).unwrap();
+        let mut buf = Vec::new();
         let result = {
-            let mut transfer = self.client.transfer();
+            let mut transfer = client.transfer();
             transfer
                 .write_function(|data| {
-                    self.buf.extend_from_slice(data);
+                    buf.extend_from_slice(data);
                     Ok(data.len())
                 })
                 .unwrap();
             transfer.perform()
         };
         match result {
-            Ok(_) => Ok(self),
+            Ok(_) => Ok(Response::new(self.client.clone(), buf)),
             Err(e) => Err(Error(e.to_string())),
         }
     }
-    pub fn status(&mut self) -> StatusCode {
-        StatusCode(self.client.response_code().unwrap())
+}
+
+pub struct Response {
+    client: Arc<Mutex<Easy>>,
+    buf: Vec<u8>,
+}
+
+impl Response {
+    fn new(client: Arc<Mutex<Easy>>, buf: Vec<u8>) -> Self {
+        Self { client, buf }
     }
-    pub fn text(&mut self) -> Result<String, Error> {
+    pub fn status(&self) -> StatusCode {
+        let mut client = self.client.lock().unwrap();
+        StatusCode(client.response_code().unwrap())
+    }
+    pub fn text(&self) -> Result<String, Error> {
         let buf = self.buf.to_owned();
-        self.buf = vec![];
         match String::from_utf8(buf) {
             Ok(text) => Ok(text),
             Err(e) => Err(Error(e.to_string())),

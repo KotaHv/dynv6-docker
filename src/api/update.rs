@@ -68,26 +68,26 @@ impl API for Update {
             return;
         }
         info!("ipv4/ipv6 address changed, start update");
-        unsafe {
-            match CLIENT.get(DYNV6_URL).query(&self.params).send() {
-                Ok(res) => {
-                    if res.status().is_success() {
-                        info!("{:?}", res.text());
-                        if let Some(v4) = &self.params.v4 {
-                            fs::write(IPV4_FILE, v4).ok();
-                            self.v4 = v4.to_owned();
-                        }
-                        if let Some(v6) = &self.params.v6 {
-                            fs::write(IPV6_FILE, v6).ok();
-                            self.v6 = v6.to_owned();
-                        }
-                    } else {
-                        error!("code: {}, msg: {:?}", res.status(), res.text());
+
+        match CLIENT.get(DYNV6_URL).query(&self.params).send() {
+            Ok(res) => {
+                if res.status().is_success() {
+                    info!("{:?}", res.text());
+                    if let Some(v4) = &self.params.v4 {
+                        fs::write(IPV4_FILE, v4).ok();
+                        self.v4 = v4.to_owned();
                     }
+                    if let Some(v6) = &self.params.v6 {
+                        fs::write(IPV6_FILE, v6).ok();
+                        self.v6 = v6.to_owned();
+                    }
+                } else {
+                    error!("code: {}, msg: {:?}", res.status(), res.text());
                 }
-                Err(err) => error!("{err}"),
             }
+            Err(err) => error!("{err}"),
         }
+
         self.params.v4 = None;
         self.params.v6 = None;
     }

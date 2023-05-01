@@ -46,21 +46,19 @@ pub fn ipv6() -> Option<IpAddr> {
     None
 }
 
-unsafe fn fetch_ipv4() -> Result<String, Error> {
+fn fetch_ipv4() -> Result<String, Error> {
     CLIENT.get(IPV4_URL).send()?.text()
 }
 
 pub fn ipv4() -> Option<IpAddr> {
-    unsafe {
-        match fetch_ipv4() {
-            Ok(ip_str) => {
-                if let Ok(ip) = ip_str.parse::<IpAddr>() {
-                    return Some(ip);
-                }
-                error!("{ip_str}");
+    match fetch_ipv4() {
+        Ok(ip_str) => {
+            if let Ok(ip) = ip_str.parse::<IpAddr>() {
+                return Some(ip);
             }
-            Err(err) => error!("{err}"),
+            error!("{ip_str}");
         }
-        None
+        Err(err) => error!("{err}"),
     }
+    None
 }
