@@ -3,8 +3,8 @@ use std::fs;
 
 use crate::api::API;
 use crate::config::{CONFIG, IPV4_FILE, IPV6_FILE};
-use crate::requests::Client;
 use crate::util;
+use crate::CLIENT;
 
 const DYNV6_URL: &'static str = "https://dynv6.com/api/update";
 
@@ -33,7 +33,6 @@ pub struct Update {
     v4: String,
     v6: String,
     params: Params,
-    client: Client,
 }
 
 impl API for Update {
@@ -42,12 +41,11 @@ impl API for Update {
             v4: CONFIG.current_ip.v4.clone(),
             v6: CONFIG.current_ip.v6.clone(),
             params: Params::new(),
-            client: Client::new(),
         }
     }
     fn check_v4(&mut self) {
         debug!("check v4");
-        if let Some(new_v4) = util::ipv4(&mut self.client) {
+        if let Some(new_v4) = util::ipv4() {
             let new_v4 = new_v4.to_string();
             if new_v4 != self.v4 {
                 info!("old ipv4: {}, current ipv4: {}", self.v4, new_v4);
@@ -70,29 +68,25 @@ impl API for Update {
             return;
         }
         info!("ipv4/ipv6 address changed, start update");
-        self.client.get(DYNV6_URL);
-        self.client.query(&self.params);
-        match self.client.send() {
-            Ok(_) => {
-                if self.client.status().is_success() {
-                    info!("{:?}", self.client.text());
-                    if let Some(v4) = &self.params.v4 {
-                        fs::write(IPV4_FILE, v4).ok();
-                        self.v4 = v4.to_owned();
+        unsafe {
+            match CLIENT.get(DYNV6_URL).query(&self.params).send() {
+                Ok(res) => {
+                    if res.status().is_success() {
+                        info!("{:?}", res.text());
+                        if let Some(v4) = &self.params.v4 {
+                            fs::write(IPV4_FILE, v4).ok();
+                            self.v4 = v4.to_owned();
+                        }
+                        if let Some(v6) = &self.params.v6 {
+                            fs::write(IPV6_FILE, v6).ok();
+                            self.v6 = v6.to_owned();
+                        }
+                    } else {
+                        error!("code: {}, msg: {:?}", res.status(), res.text());
                     }
-                    if let Some(v6) = &self.params.v6 {
-                        fs::write(IPV6_FILE, v6).ok();
-                        self.v6 = v6.to_owned();
-                    }
-                } else {
-                    error!(
-                        "code: {}, msg: {:?}",
-                        self.client.status(),
-                        self.client.text()
-                    );
                 }
+                Err(err) => error!("{err}"),
             }
-            Err(err) => error!("{err}"),
         }
         self.params.v4 = None;
         self.params.v6 = None;

@@ -3,8 +3,8 @@ use std::net::IpAddr;
 use local_ip_address::list_afinet_netifas;
 
 use crate::config::CONFIG;
-use crate::requests::Client;
 use crate::Error;
+use crate::CLIENT;
 
 const IPV4_URL: &'static str = "https://api4.my-ip.io/ip";
 
@@ -46,21 +46,21 @@ pub fn ipv6() -> Option<IpAddr> {
     None
 }
 
-fn fetch_ipv4(client: &mut Client) -> Result<String, Error> {
-    client.get(IPV4_URL);
-    client.send()?;
-    client.text()
+unsafe fn fetch_ipv4() -> Result<String, Error> {
+    CLIENT.get(IPV4_URL).send()?.text()
 }
 
-pub fn ipv4(client: &mut Client) -> Option<IpAddr> {
-    match fetch_ipv4(client) {
-        Ok(ip_str) => {
-            if let Ok(ip) = ip_str.parse::<IpAddr>() {
-                return Some(ip);
+pub fn ipv4() -> Option<IpAddr> {
+    unsafe {
+        match fetch_ipv4() {
+            Ok(ip_str) => {
+                if let Ok(ip) = ip_str.parse::<IpAddr>() {
+                    return Some(ip);
+                }
+                error!("{ip_str}");
             }
-            error!("{ip_str}");
+            Err(err) => error!("{err}"),
         }
-        Err(err) => error!("{err}"),
+        None
     }
-    None
 }
