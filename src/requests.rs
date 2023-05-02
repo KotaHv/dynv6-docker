@@ -1,45 +1,43 @@
-use std::{
-    fmt::Display,
-    sync::{Arc, Mutex},
-};
+use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 use curl::easy::Easy;
-use once_cell::sync::Lazy;
+use once_cell::unsync::Lazy;
 use serde::Serialize;
 
-pub static CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
+pub const CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
 
+#[derive(Clone)]
 pub struct Client {
-    client: Arc<Mutex<Easy>>,
+    inner: Rc<RefCell<Easy>>,
 }
 
 impl Client {
     pub fn new() -> Self {
         Self {
-            client: Arc::new(Mutex::new(Easy::new())),
+            inner: Rc::new(RefCell::new(Easy::new())),
         }
     }
 
     pub fn get(&self, url: &str) -> Request {
-        let mut client = self.client.lock().unwrap();
-        client.get(true).unwrap();
-        Request::new(self.client.clone(), url.into())
+        let mut inner = self.inner.borrow_mut();
+        inner.get(true).unwrap();
+        Request::new(self.clone(), url.into())
     }
 }
 
 pub struct Request {
-    client: Arc<Mutex<Easy>>,
+    client: Client,
     url: String,
 }
 
 impl Request {
-    fn new(client: Arc<Mutex<Easy>>, url: String) -> Self {
+    fn new(client: Client, url: String) -> Self {
         Self { client, url }
     }
     pub fn basic_auth(self, username: &str, password: &str) -> Self {
         use curl::easy::Auth;
         {
-            let mut client = self.client.lock().unwrap();
+            let mut client = self.client.inner.borrow_mut();
             client.username(username).unwrap();
             client.password(password).unwrap();
             client.http_auth(Auth::new().basic(true)).unwrap();
@@ -52,7 +50,7 @@ impl Request {
         self
     }
     pub fn send(&mut self) -> Result<Response, Error> {
-        let mut client = self.client.lock().unwrap();
+        let mut client = self.client.inner.borrow_mut();
         client.url(&self.url).unwrap();
         let mut buf = Vec::new();
         let result = {
@@ -73,16 +71,16 @@ impl Request {
 }
 
 pub struct Response {
-    client: Arc<Mutex<Easy>>,
+    client: Client,
     buf: Vec<u8>,
 }
 
 impl Response {
-    fn new(client: Arc<Mutex<Easy>>, buf: Vec<u8>) -> Self {
+    fn new(client: Client, buf: Vec<u8>) -> Self {
         Self { client, buf }
     }
     pub fn status(&self) -> StatusCode {
-        let mut client = self.client.lock().unwrap();
+        let mut client = self.client.inner.borrow_mut();
         StatusCode(client.response_code().unwrap())
     }
     pub fn text(&self) -> Result<String, Error> {
