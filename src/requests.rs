@@ -1,4 +1,4 @@
-use std::{cell::RefCell, fmt::Display, rc::Rc};
+use std::{cell::RefCell, fmt::Display};
 
 use curl::easy::Easy;
 use once_cell::unsync::Lazy;
@@ -6,32 +6,31 @@ use serde::Serialize;
 
 pub const CLIENT: Lazy<Client> = Lazy::new(|| Client::new());
 
-#[derive(Clone)]
 pub struct Client {
-    inner: Rc<RefCell<Easy>>,
+    inner: RefCell<Easy>,
 }
 
 impl Client {
     pub fn new() -> Self {
         Self {
-            inner: Rc::new(RefCell::new(Easy::new())),
+            inner: RefCell::new(Easy::new()),
         }
     }
 
     pub fn get(&self, url: &str) -> Request {
-        let mut inner = self.inner.borrow_mut();
-        inner.get(true).unwrap();
-        Request::new(self.clone(), url.into())
+        self.inner.borrow_mut().get(true).unwrap();
+
+        Request::new(self, url.into())
     }
 }
 
-pub struct Request {
-    client: Client,
+pub struct Request<'a> {
+    client: &'a Client,
     url: String,
 }
 
-impl Request {
-    fn new(client: Client, url: String) -> Self {
+impl<'a> Request<'a> {
+    fn new(client: &'a Client, url: String) -> Self {
         Self { client, url }
     }
     pub fn basic_auth(self, username: &str, password: &str) -> Self {
@@ -49,7 +48,7 @@ impl Request {
         self.url = self.url.to_string() + "?" + &pairs;
         self
     }
-    pub fn send(&mut self) -> Result<Response, Error> {
+    pub fn send(&self) -> Result<Response, Error> {
         let mut client = self.client.inner.borrow_mut();
         client.url(&self.url).unwrap();
         let mut buf = Vec::new();
@@ -64,24 +63,23 @@ impl Request {
             transfer.perform()
         };
         match result {
-            Ok(_) => Ok(Response::new(self.client.clone(), buf)),
+            Ok(_) => Ok(Response::new(self.client, buf)),
             Err(e) => Err(Error(e.to_string())),
         }
     }
 }
 
-pub struct Response {
-    client: Client,
+pub struct Response<'a> {
+    client: &'a Client,
     buf: Vec<u8>,
 }
 
-impl Response {
-    fn new(client: Client, buf: Vec<u8>) -> Self {
+impl<'a> Response<'a> {
+    fn new(client: &'a Client, buf: Vec<u8>) -> Self {
         Self { client, buf }
     }
     pub fn status(&self) -> StatusCode {
-        let mut client = self.client.inner.borrow_mut();
-        StatusCode(client.response_code().unwrap())
+        StatusCode(self.client.inner.borrow_mut().response_code().unwrap())
     }
     pub fn text(&self) -> Result<String, Error> {
         let buf = self.buf.to_owned();
