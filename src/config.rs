@@ -1,7 +1,7 @@
 use once_cell::sync::Lazy;
 use serde::Deserialize;
-use std::fs;
 use std::net::IpAddr;
+use std::{fmt::Display, fs};
 
 use figment::{providers::Env, Figment};
 
@@ -11,6 +11,48 @@ pub const IPV6_FILE: &'static str = ".dynv6.addr6";
 const PREFIX: &'static str = "DYNV6_";
 
 pub static CONFIG: Lazy<Config> = Lazy::new(|| init_config());
+
+#[derive(Debug)]
+pub enum LogStyle {
+    Auto,
+    Always,
+    Never,
+}
+
+impl Default for LogStyle {
+    fn default() -> Self {
+        Self::Auto
+    }
+}
+
+impl Display for LogStyle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            LogStyle::Auto => "auto",
+            LogStyle::Always => "always",
+            LogStyle::Never => "never",
+        };
+        write!(f, "{}", s)
+    }
+}
+
+impl<'de> Deserialize<'de> for LogStyle {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?.to_lowercase();
+        match s.as_str() {
+            "auto" => Ok(LogStyle::Auto),
+            "always" => Ok(LogStyle::Always),
+            "never" => Ok(LogStyle::Never),
+            _ => Err(serde::de::Error::unknown_field(
+                &s,
+                &["auto", "always", "never"],
+            )),
+        }
+    }
+}
 
 #[derive(Deserialize, Debug)]
 pub struct CurrentIpAddr {
@@ -49,18 +91,17 @@ impl Default for API {
 }
 
 #[derive(Deserialize, Debug)]
+#[serde(default)]
 pub struct Log {
-    #[serde(default = "Log::level")]
     pub level: String,
-    #[serde(default = "Log::style")]
-    pub style: String,
+    pub style: LogStyle,
 }
 
 impl Default for Log {
     fn default() -> Self {
         Log {
             level: Log::level(),
-            style: Log::style(),
+            style: LogStyle::default(),
         }
     }
 }
@@ -68,10 +109,6 @@ impl Default for Log {
 impl Log {
     fn level() -> String {
         "dynv6=info".to_string()
-    }
-
-    fn style() -> String {
-        "always".to_string()
     }
 }
 

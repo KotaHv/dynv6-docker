@@ -28,7 +28,7 @@ pub fn init_logger() {
             )
         })
         .parse_filters(&CONFIG.log.level)
-        .parse_write_style(&CONFIG.log.style)
+        .parse_write_style(&CONFIG.log.style.to_string())
         .init();
 }
 
